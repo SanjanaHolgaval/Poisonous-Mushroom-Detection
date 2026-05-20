@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification Result</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .edible {
+            color: #28a745;
+        }
+
+        .poisonous {
+            color: #dc3545;
+        }
+
+        .unclear {
+            color: #ffc107;
+        }
+
+        .confidence-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+            transition: width 1s ease;
+        }
+
+        .metrics {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .warning.poisonous {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .disclaimer {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            color: #004085;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .disclaimer strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍄 Classification Result</h1>
+
+        <div class="result-card">
+            <div class="result-text {{ 'poisonous' if result == 'Poisonous' else 'edible' if result == 'Edible' else 'unclear' }}">
+                {% if result in ['Not a mushroom', 'Not recognized'] %}
+                    Image Analysis Failed
+                {% else %}
+                    {{ result }}
+                {% endif %}
+            </div>
+
+            {% if result not in ['Not a mushroom', 'Not recognized'] %}
+            <div class="confidence-bar">
+                <div class="confidence-fill" data-score="{{ score }}"></div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-label">Prediction Score</div>
+                    <div class="metric-value">{{ score }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Confidence</div>
+                    <div class="metric-value">{{ confidence }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if result in ['Not a mushroom', 'Not recognized'] %}
+        <div class="warning">
+            <strong>🚫 Invalid Image:</strong>
+            {{ species }}. Please upload a clear photo of a mushroom for analysis.
+        </div>
+        {% elif confidence|float < 0.5 %}
+        <div class="warning">
+            <strong>⚠️ Low Confidence Warning:</strong>
+            The image appears unclear or may not contain a mushroom. This prediction has low confidence ({{ "%.1f"|format(confidence|float * 100) }}%). Please try uploading a clearer, closer image of the mushroom.
+        </div>
+        {% endif %}
+
+        {% if result == 'Poisonous' %}
+        <div class="warning poisonous">
+            <strong>🚫 DANGER!</strong>
+            This mushroom appears to be poisonous. Do NOT consume it under any circumstances.
+        </div>
+        {% else %}
+        <div class="warning">
+            <strong>⚠️ Caution:</strong>
+            Even if classified as edible, proper identification by an expert is still recommended.
+        </div>
+        {% endif %}
+
+        <div class="disclaimer">
+            <strong>🔬 Scientific Disclaimer:</strong>
+            This AI model has approximately 90% accuracy. Machine learning models can make errors, and mushroom identification requires expert knowledge. This tool should only be used as a supplementary aid, not as the sole method of identification.
+        </div>
+
+        <div style="margin-top: 30px;">
+            <a href="/" class="btn">Analyze Another Mushroom</a>
+            <a href="https://www.mushroomexpert.com/" class="btn secondary" target="_blank">Learn More About Mushrooms</a>
+        </div>
+    </div>
+
+    <script>
+        // Animate confidence bar
+        document.addEventListener('DOMContentLoaded', function() {
+            const confidenceFill = document.querySelector('.confidence-fill');
+            const score = parseFloat(confidenceFill.getAttribute('data-score'));
+            const width = score * 100;
+            confidenceFill.style.width = width + '%';
+        });
+    </script>
+</body>
+</html>
